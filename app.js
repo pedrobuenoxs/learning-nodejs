@@ -1,44 +1,56 @@
-/* 
-const http = require('http');
-
-const hostname = '127.0.0.1';
-const port = 3000;
-
-const server = http.createServer((req, res) => {
-  res.statusCode = 200;
-  res.setHeader('Content-Type', 'text/plain');
-  res.end('Hello World');
-});
-
-server.listen(port, hostname, () => {
-  console.log(`Server running at http://${hostname}:${port}/`);
-});
-*/
-
+//Instanciando express
 const express = require("express");
 const app = express();
 
+//HTML Engine
+const handlebars = require('express-handlebars');
 
-app.get("/",function(req,res){
-    res.send("Ola pessoa.")
-})
+//Bodyparser
+const bodyParser = require('body-parser');
 
-app.get("/sobre",function(req,res){
-    res.send("Eu sou o Pedro e estou estudando Node js para desenvolvimento back end")
-})
-
-app.get("/pessoa/:nome/:cidade",function(req,res){
-    res.send("<h1>Bem vindo " + req.params.nome + "</h1>" + "<h2>Pelo visto você é de: " + req.params.cidade + "</h2>");
+//Models post
+const Post = require('./models/Post')
 
 
-})
-app.get("/:idade",function(req,res){
-    res.send("Você tem " + req.params.idade + " meus parabéns");
+// Config
+    //Template Engine
+    app.engine('handlebars', handlebars.engine({defaultLayout: 'main'}));
+    app.set('view engine', 'handlebars');
+
+    
+    //Bodyparser
+    app.use(bodyParser.urlencoded({extended: false}));
+    app.use(bodyParser.json())
 
 
-})
+    app.get('/', function(req,res){
+        Post.findAll({order:[['id','desc']]}).then(function(posts){
+            res.render('home',{posts:posts})
+        })        
+    })
 
+    app.get('/cad',function(req,res){
+        res.render('forms')
+    })
+ 
+    app.post('/add',function(req,res){
+        Post.create({
+            titulo: req.body.titulo,
+            conteudo: req.body.conteudo
+        }).then(function(){
+            res.redirect('/')
+        }).catch(function(erro){
+            res.send("erro ao criar postagem. erro: "+ erro)
+        })
+    })
 
+    app.get('/deletar/:id',function(req,res){
+        Post.destroy({where:{'id':req.params.id}}).then(function(){
+            res.send("postagem deletada")
+        }).catch(function(erro){
+            res.send("postagem nao existe")
+        })
+    })
 
 
 app.listen(3000, function(){
